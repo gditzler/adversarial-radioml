@@ -37,7 +37,7 @@ train_params = {'type': 'vtcnn2',
                 'nb_epoch': 50, 
                 'verbose': verbose, 
                 'NHWC': [220000, 2, 128, 1],
-                'tpu': True, 
+                'tpu': False, 
                 'file_path': 'convmodrecnets_CNN2_0.5.wts.h5'}
 # adversary's model 
 train_adversary_params = {'type': 'vtcnn2', 
@@ -47,7 +47,7 @@ train_adversary_params = {'type': 'vtcnn2',
                           'nb_epoch': 50, 
                           'verbose': verbose, 
                           'NHWC': [220000, 2, 128, 1],
-                          'tpu': True, 
+                          'tpu': False, 
                           'file_path': 'convmodrecnets_adversary_CNN2_0.5.wts.h5'}
 # name for the logger     
 logger_name = 'aml_radioml_vtcnn2_vtcnn2_scenario_A'
