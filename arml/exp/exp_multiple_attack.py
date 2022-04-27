@@ -128,7 +128,7 @@ def experiment_adversarial(file_path:str,
         
         model = nn_model(X=Xtr, Y=Ytr, train_param=train_params)
         
-        Xfgsm = generate_aml_data(model_aml, Xte, Yte, {'type': 'FastGradientMethod', 'eps': 0.15})
+        Xfgsm = generate_aml_data(model_aml, Xte, Yte, {'type': 'FastGradientMethod', 'eps': 0.0005})
         Xdeep = generate_aml_data(model_aml, Xte, Yte, {'type': 'DeepFool'})
         Xpgd = generate_aml_data(model_aml, Xte, Yte, {'type': 'ProjectedGradientDescent', 
                                                        'eps': 1.0, 

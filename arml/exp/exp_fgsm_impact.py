@@ -27,6 +27,8 @@ from ..models import nn_model
 from ..performance import FGSMPerfLogger
 from ..adversarial_data import generate_aml_data
 
+from art.defences.postprocessor import HighConfidence
+
 from sklearn.model_selection import KFold
 
 def experiment_fgsm(file_path:str,
@@ -36,6 +38,7 @@ def experiment_fgsm(file_path:str,
                     epsilons:list=[0.01, 0.05, 0.1, 0.15, 0.2],  # [0.25, 0.75, 0.125, 0.175]
                     train_params:dict={}, 
                     train_adversary_params:dict={}, 
+                    defense:str=None, 
                     logger_name:str='aml_radioml_vtcnn2_vtcnn2_scenario_A',
                     output_path:str='outputs/aml_fgsm_vtcnn2_vtcnn2_scenario_A_radioml.pkl'): 
     """evaluate different values of epsilon with FGSM
@@ -121,16 +124,18 @@ def experiment_fgsm(file_path:str,
     for train_index, test_index in kf.split(X): 
         # split out the training and testing data. do the sample for the modulations and snrs
         Xtr, Ytr, Xte, Yte, snrs_te = X[train_index], Y[train_index], X[test_index], Y[test_index], snrs[test_index]
+        model = nn_model(X=Xtr, Y=Ytr, train_param=train_params)
 
-        if scenario == 'A': 
+        if scenario == 'A':  # nearly white box
             # sample adversarial training data 
             Ntr = len(Xtr)
             sample_indices = np.random.randint(0, Ntr, Ntr)        
 
             # train the model
             model_aml = nn_model(X=Xtr[sample_indices], Y=Ytr[sample_indices], train_param=train_adversary_params) 
+        elif scenario == 'B': # completely whitebox 
+            model_aml = model
         
-        model = nn_model(X=Xtr, Y=Ytr, train_param=train_params)
         
         # loop through the different values of epsilon and generate adversarial datasets
         for eps_index, epsilon in enumerate(epsilons): 
@@ -138,6 +143,10 @@ def experiment_fgsm(file_path:str,
 
             for snr in np.unique(snrs_te): 
                 Yhat_fgsm = model.predict(Xfgsm[snrs_te == snr])
+                if defense == 'HighConfidence': 
+                    postprocessor = HighConfidence(cutoff=0.1)
+                    Yhat_fgsm = postprocessor(preds=Yhat_fgsm)
+
                 result_logger.add_scores(Yte[snrs_te==snr], Yhat_fgsm, snr, eps_index)
         
         result_logger.increment_count()

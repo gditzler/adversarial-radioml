@@ -27,10 +27,12 @@ file_path = 'data/RML2016.10a_dict.pkl'
 n_runs = 5
 # verbose ? 
 verbose = 1
+# defense 
+defense = 'HighConfidence'
 # type of experiment 
 scenario = 'A'
 # attack epsilons 
-epsilons = [0.01, 0.05, 0.1, 0.15,  0.2]
+epsilons = [0.00025, 0.0005, 0.001, 0.005, 0.01]
 # epsilons = [0.025, 0.75, 0.125, 0.175]
 # defenders model 
 train_params = {'type': 'vtcnn2', 
@@ -53,9 +55,9 @@ train_adversary_params = {'type': 'vtcnn2',
                           'tpu': False, 
                           'file_path': 'convmodrecnets_adversary_CNN2_0.5.wts.h5'}
 # name for the logger     
-logger_name = 'aml_radioml_vtcnn2_vtcnn2_scenario_A'
+logger_name = 'aml_radioml_vtcnn2_vtcnn2_scenario_A' + defense
 # output path
-output_path = 'outputs/aml_fgsm_vtcnn2_vtcnn2_scenario_A_radioml.pkl'
+output_path = 'outputs/aml_fgsm_vtcnn2_vtcnn2_scenario_A_radioml_' + defense + '.pkl'
 
 exp_fgsm_impact(file_path=file_path,
                 n_runs=n_runs, 
@@ -65,6 +67,7 @@ exp_fgsm_impact(file_path=file_path,
                 train_params=train_params, 
                 train_adversary_params=train_adversary_params, 
                 logger_name=logger_name,
+                defense=defense, 
                 output_path=output_path)
 
 
