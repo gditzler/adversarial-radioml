@@ -124,12 +124,6 @@ def experiment_adversarial(file_path:str,
                                   'file_path': 'models/convmodrecnets_adversary_CNN2_0.5.wts.h5'}
     
     # initialize the performances to empty 
-    result_logger = AdversarialPerfLogger(name=logger_name, 
-                                          snrs=np.unique(snrs), 
-                                          mods=np.unique(mods), 
-                                          params=[train_params, train_adversary_params])
-    
-    # initialize the performances to empty 
     result_fgsm_logger = FGSMPerfLogger(name='FGSM', 
                                    snrs=np.unique(snrs), 
                                    mods=np.unique(mods), 

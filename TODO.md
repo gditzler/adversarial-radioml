@@ -4,3 +4,4 @@
 - [ ] Add different neural network architectures. 
 - [x] Add an experiment that writes the results of the impact of epsilon on the FGSM. For example, run epsilon from 0.01 to 0.15. We should also add different scenarios that show the impact of the adversary's knowledge and their impacts on the performances. 
 - [x] Write a script / notebook to summarize the results, generate tables and plots. 
+- [] adversarial training (see [neural-structured-learning](https://www.tensorflow.org/neural_structured_learning))
