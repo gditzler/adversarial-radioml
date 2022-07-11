@@ -36,6 +36,8 @@ from art.defences.postprocessor import ClassLabels
 from art.defences.postprocessor import HighConfidence
 from art.defences.postprocessor import ReverseSigmoid
 
+import neural_structured_learning as nsl
+
 
 def experiment_adversarial(file_path:str,
                            n_runs:int=5, 
@@ -46,6 +48,7 @@ def experiment_adversarial(file_path:str,
                            shift_sequence:bool=True, 
                            shift_amount:int=50, 
                            train_adversary_params:dict={}, 
+                           adversarial_training:bool=False, 
                            epsilons = [0.00025, 0.0005, 0.001, 0.005, 0.01], 
                            logger_name:str='aml_radioml_vtcnn2_vtcnn2_scenario_A',
                            output_path:str='outputs/aml_vtcnn2_vtcnn2_scenario_A_radioml.pkl'): 

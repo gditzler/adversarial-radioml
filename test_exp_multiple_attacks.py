@@ -49,10 +49,24 @@ train_adversary_params = {'type': 'vtcnn2',
                           'NHWC': [220000, 2, 128, 1],
                           'tpu': False, 
                           'file_path': 'models/convmodrecnets_adversary_CNN2_0.5.wts.h5'}
-# name for the logger     
-logger_name = 'aml_radioml_vtcnn2_vtcnn2_scenario_' + scenario
-# output path
-output_path = 'outputs/aml_vtcnn2_vtcnn2_scenario_'+scenario+'_radioml_multiple_attack.pkl'
+# run a sequence shift exp?
+shift_sequence = False 
+# run a sequence shift exp?
+shift_amount = 50 
+
+
+if shift_sequence:
+    # name for the logger     
+    logger_name = 'aml_radioml_vtcnn2_vtcnn2_scenario_' + scenario + '_shift_'+str(shift_amount)
+    # output path
+    output_path = 'outputs/aml_vtcnn2_vtcnn2_scenario_'+scenario+'_radioml_multiple_attack' + '_shift_'+str(shift_amount) + '.pkl'
+else: 
+    # name for the logger     
+    logger_name = 'aml_radioml_vtcnn2_vtcnn2_scenario_' + scenario  
+    # output path
+    output_path = 'outputs/aml_vtcnn2_vtcnn2_scenario_'+scenario+'_radioml_multiple_attack.pkl'
+
+
 
 exp_multiple_attack(file_path=file_path,
                     n_runs=n_runs, 
