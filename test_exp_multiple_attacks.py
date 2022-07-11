@@ -28,7 +28,7 @@ n_runs = 5
 # verbose ? 
 verbose = 1
 # type of experiment 
-scenario = 'A'
+scenario = 'WB'
 # defenders model 
 train_params = {'type': 'vtcnn2', 
                 'dropout': 0.5, 
@@ -38,7 +38,7 @@ train_params = {'type': 'vtcnn2',
                 'verbose': verbose, 
                 'NHWC': [220000, 2, 128, 1],
                 'tpu': False, 
-                'file_path': 'convmodrecnets_CNN2_0.5.wts.h5'}
+                'file_path': 'models/convmodrecnets_CNN2_0.5.wts.h5'}
 # adversary's model 
 train_adversary_params = {'type': 'vtcnn2', 
                           'dropout': 0.5, 
@@ -48,11 +48,11 @@ train_adversary_params = {'type': 'vtcnn2',
                           'verbose': verbose, 
                           'NHWC': [220000, 2, 128, 1],
                           'tpu': False, 
-                          'file_path': 'convmodrecnets_adversary_CNN2_0.5.wts.h5'}
+                          'file_path': 'models/convmodrecnets_adversary_CNN2_0.5.wts.h5'}
 # name for the logger     
-logger_name = 'aml_radioml_vtcnn2_vtcnn2_scenario_A'
+logger_name = 'aml_radioml_vtcnn2_vtcnn2_scenario_' + scenario
 # output path
-output_path = 'outputs/aml_vtcnn2_vtcnn2_scenario_A_radioml_multiple_attack.pkl'
+output_path = 'outputs/aml_vtcnn2_vtcnn2_scenario_'+scenario+'_radioml_multiple_attack.pkl'
 
 exp_multiple_attack(file_path=file_path,
                     n_runs=n_runs, 

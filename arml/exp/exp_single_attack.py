@@ -50,7 +50,7 @@ def experiment_single_adversarial(file_path:str,
         Verbose?  
     scenario : str 
         Adversary knowledge: 
-            'A': has an NN structure and a subset of the training data  
+            'GB': has an NN structure and a subset of the training data  
     attack_type : str 
         Attack type: FastGradientMethod, DeepFool, ProjectedGradientDescent
     train_params : dict
@@ -120,13 +120,15 @@ def experiment_single_adversarial(file_path:str,
         # split out the training and testing data. do the sample for the modulations and snrs
         Xtr, Ytr, Xte, Yte, snrs_te = X[train_index], Y[train_index], X[test_index], Y[test_index], snrs[test_index]
 
-        if scenario == 'A': 
+        if scenario == 'GB': 
             # sample adversarial training data 
             Ntr = len(Xtr)
             sample_indices = np.random.randint(0, Ntr, Ntr)        
 
             # train the model
             model_aml = nn_model(X=Xtr[sample_indices], Y=Ytr[sample_indices], train_param=train_adversary_params) 
+        elif scenario == 'WB': # completely whitebox 
+            model_aml = model
         
         model = nn_model(X=Xtr, Y=Ytr, train_param=train_params)
         

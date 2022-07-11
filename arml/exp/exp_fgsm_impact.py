@@ -54,7 +54,7 @@ def experiment_fgsm(file_path:str,
         Verbose?  
     scenario : str 
         Adversary knowledge: 
-            'A': has an NN structure and a subset of the training data  
+            'GB': has an NN structure and a subset of the training data  
     epsilons : list 
         List of adversarial budgets 
     train_params : dict
@@ -126,14 +126,14 @@ def experiment_fgsm(file_path:str,
         Xtr, Ytr, Xte, Yte, snrs_te = X[train_index], Y[train_index], X[test_index], Y[test_index], snrs[test_index]
         model = nn_model(X=Xtr, Y=Ytr, train_param=train_params)
 
-        if scenario == 'A':  # nearly white box
+        if scenario == 'GB':  # nearly white box
             # sample adversarial training data 
             Ntr = len(Xtr)
             sample_indices = np.random.randint(0, Ntr, Ntr)        
 
             # train the model
             model_aml = nn_model(X=Xtr[sample_indices], Y=Ytr[sample_indices], train_param=train_adversary_params) 
-        elif scenario == 'B': # completely whitebox 
+        elif scenario == 'WB': # completely whitebox 
             model_aml = model
         
         

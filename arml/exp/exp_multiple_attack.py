@@ -30,11 +30,20 @@ from ..adversarial_data import generate_aml_data
 
 from sklearn.model_selection import KFold
 
+from art.defences.postprocessor import GaussianNoise
+from art.defences.postprocessor import ClassLabels
+from art.defences.postprocessor import HighConfidence
+from art.defences.postprocessor import ReverseSigmoid
+
+
 def experiment_adversarial(file_path:str,
                            n_runs:int=5, 
                            verbose:int=1, 
+                           epsilon:float=0.0001, 
                            scenario:str='A', 
                            train_params:dict={}, 
+                           shift_sequence:bool=False, 
+                           shift_amount:int=50, 
                            train_adversary_params:dict={}, 
                            logger_name:str='aml_radioml_vtcnn2_vtcnn2_scenario_A',
                            output_path:str='outputs/aml_vtcnn2_vtcnn2_scenario_A_radioml.pkl'): 
@@ -49,9 +58,15 @@ def experiment_adversarial(file_path:str,
         Number of cross validations  
     verbose : int
         Verbose?  
+    epsilon : float
+        attack strength
+    shift_sequence : bool
+        do you want to shift the location of the perturbation 
+    shift_amount : int
+        how much do you shift the perturbation 
     scenario : str 
         Adversary knowledge: 
-            'A': has an NN structure and a subset of the training data  
+            'GB': has an NN structure and a subset of the training data  
     train_params : dict
         Training parameters
             train_params = {'type': 'vtcnn2', 
@@ -94,7 +109,7 @@ def experiment_adversarial(file_path:str,
                         'verbose': verbose, 
                         'NHWC': [N, H, W, C],
                         'tpu': False, 
-                        'file_path': 'convmodrecnets_CNN2_0.5.wts.h5'}
+                        'file_path': 'models/convmodrecnets_CNN2_0.5.wts.h5'}
     
     if len(train_adversary_params) == 0:
         train_adversary_params = {'type': 'vtcnn2', 
@@ -104,7 +119,7 @@ def experiment_adversarial(file_path:str,
                                   'nb_epoch': 50, 
                                   'verbose': verbose, 
                                   'NHWC': [N, H, W, C],
-                                  'file_path': 'convmodrecnets_adversary_CNN2_0.5.wts.h5'}
+                                  'file_path': 'models/convmodrecnets_adversary_CNN2_0.5.wts.h5'}
     
     # initialize the performances to empty 
     result_logger = AdversarialPerfLogger(name=logger_name, 
@@ -117,23 +132,43 @@ def experiment_adversarial(file_path:str,
     for train_index, test_index in kf.split(X): 
         # split out the training and testing data. do the sample for the modulations and snrs
         Xtr, Ytr, Xte, Yte, snrs_te = X[train_index], Y[train_index], X[test_index], Y[test_index], snrs[test_index]
+        
+        model = nn_model(X=Xtr, Y=Ytr, train_param=train_params) 
 
-        if scenario == 'A': 
+        if scenario == 'GB': 
             # sample adversarial training data 
             Ntr = len(Xtr)
             sample_indices = np.random.randint(0, Ntr, Ntr)        
 
             # train the model
             model_aml = nn_model(X=Xtr[sample_indices], Y=Ytr[sample_indices], train_param=train_adversary_params) 
+        elif scenario == 'WB': # completely whitebox 
+            model_aml = model.copy()
         
-        model = nn_model(X=Xtr, Y=Ytr, train_param=train_params)
         
-        Xfgsm = generate_aml_data(model_aml, Xte, Yte, {'type': 'FastGradientMethod', 'eps': 0.0005})
+        
+        Xfgsm = generate_aml_data(model_aml, Xte, Yte, {'type': 'FastGradientMethod', 'eps': epsilon})
         Xdeep = generate_aml_data(model_aml, Xte, Yte, {'type': 'DeepFool'})
         Xpgd = generate_aml_data(model_aml, Xte, Yte, {'type': 'ProjectedGradientDescent', 
-                                                       'eps': 1.0, 
+                                                       'eps': epsilon, 
                                                        'eps_step':0.1, 
                                                        'max_iter': 50})
+        
+        if shift_sequence: 
+            # get the perturbation 
+            delta_fgsm = Xfgsm - Xte
+            delta_deep = Xdeep - Xte
+            delta_pgd = Xpgd - Xte
+            # apply the shift 
+            delta_fgsm[:, :, :shift_amount, 1] = 0
+            delta_deep[:, :, :shift_amount, 1] = 0
+            delta_pgd[:, :, :shift_amount, 1] = 0
+            Xfgsm = Xte + delta_fgsm
+            Xdeep = Xte + delta_deep
+            Xpgd = Xte + delta_pgd
+
+
+
 
         # for each of the snrs -> grab all of the data for that snr, which should have all of
         # the classes then evaluate the model on the data for the snr under test. store the 
