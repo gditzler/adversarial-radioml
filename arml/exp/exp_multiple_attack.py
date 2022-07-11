@@ -23,9 +23,10 @@
 import pickle 
 import numpy as np 
 
+from copy import copy 
 from ..utils import load_radioml
 from ..models import nn_model
-from ..performance import AdversarialPerfLogger
+from ..performance import AdversarialPerfLogger, PerfLogger, FGSMPerfLogger
 from ..adversarial_data import generate_aml_data
 
 from sklearn.model_selection import KFold
@@ -42,9 +43,10 @@ def experiment_adversarial(file_path:str,
                            epsilon:float=0.0001, 
                            scenario:str='A', 
                            train_params:dict={}, 
-                           shift_sequence:bool=False, 
+                           shift_sequence:bool=True, 
                            shift_amount:int=50, 
                            train_adversary_params:dict={}, 
+                           epsilons = [0.00025, 0.0005, 0.001, 0.005, 0.01], 
                            logger_name:str='aml_radioml_vtcnn2_vtcnn2_scenario_A',
                            output_path:str='outputs/aml_vtcnn2_vtcnn2_scenario_A_radioml.pkl'): 
     """run mulltiple attacks (FGSM, DeepFool, PGD) on the radioml dataset. note that this is not going to run 
@@ -127,6 +129,22 @@ def experiment_adversarial(file_path:str,
                                           mods=np.unique(mods), 
                                           params=[train_params, train_adversary_params])
     
+    # initialize the performances to empty 
+    result_fgsm_logger = FGSMPerfLogger(name='FGSM', 
+                                   snrs=np.unique(snrs), 
+                                   mods=np.unique(mods), 
+                                   params=[train_params, train_adversary_params], 
+                                   epsilons=epsilons)
+    result_pgd_logger = FGSMPerfLogger(name='PGD', 
+                                   snrs=np.unique(snrs), 
+                                   mods=np.unique(mods), 
+                                   params=[train_params, train_adversary_params], 
+                                   epsilons=epsilons)
+    result_deepfool_logger = AdversarialPerfLogger(name='DeepFool', 
+                                          snrs=np.unique(snrs), 
+                                          mods=np.unique(mods), 
+                                          params=[train_params, train_adversary_params])
+    
     kf = KFold(n_splits=n_runs)
     
     for train_index, test_index in kf.split(X): 
@@ -139,55 +157,71 @@ def experiment_adversarial(file_path:str,
             # sample adversarial training data 
             Ntr = len(Xtr)
             sample_indices = np.random.randint(0, Ntr, Ntr)        
-
             # train the model
             model_aml = nn_model(X=Xtr[sample_indices], Y=Ytr[sample_indices], train_param=train_adversary_params) 
         elif scenario == 'WB': # completely whitebox 
-            model_aml = model.copy()
+            model_aml = copy(model)
         
-        
-        
-        Xfgsm = generate_aml_data(model_aml, Xte, Yte, {'type': 'FastGradientMethod', 'eps': epsilon})
+        # evaluate Deepfool 
         Xdeep = generate_aml_data(model_aml, Xte, Yte, {'type': 'DeepFool'})
-        Xpgd = generate_aml_data(model_aml, Xte, Yte, {'type': 'ProjectedGradientDescent', 
-                                                       'eps': epsilon, 
-                                                       'eps_step':0.1, 
-                                                       'max_iter': 50})
-        
         if shift_sequence: 
             # get the perturbation 
-            delta_fgsm = Xfgsm - Xte
             delta_deep = Xdeep - Xte
-            delta_pgd = Xpgd - Xte
             # apply the shift 
-            delta_fgsm[:, :, :shift_amount, 1] = 0
             delta_deep[:, :, :shift_amount, 1] = 0
-            delta_pgd[:, :, :shift_amount, 1] = 0
-            Xfgsm = Xte + delta_fgsm
             Xdeep = Xte + delta_deep
-            Xpgd = Xte + delta_pgd
-
-
-
-
+        
         # for each of the snrs -> grab all of the data for that snr, which should have all of
         # the classes then evaluate the model on the data for the snr under test. store the 
         # aucs, accs, and ppls in a dictionary 
         for snr in np.unique(snrs_te): 
             Yhat = model.predict(Xte[snrs_te == snr]) 
-            Yhat_fgsm = model.predict(Xfgsm[snrs_te == snr])
             Yhat_deep = model.predict(Xdeep[snrs_te == snr])
-            Yhat_pgd = model.predict(Xpgd[snrs_te == snr])
-            result_logger.add_scores(Yte[snrs_te==snr], 
-                                     Yhat, Yhat_fgsm, Yhat_deep, Yhat_pgd, snr)
+            result_deepfool_logger.add_scores(Yte[snrs_te==snr], Yhat, Yhat, Yhat_deep, Yhat, snr)
+
+        
+        # do fgsm and pgd 
+        # loop through the different values of epsilon and generate adversarial datasets
+        for eps_index, eps in enumerate(epsilons): 
+            Xfgsm = generate_aml_data(model_aml, Xte, Yte, {'type': 'FastGradientMethod', 'eps': eps})
+            Xpgd = generate_aml_data(model_aml, Xte, Yte, {'type': 'ProjectedGradientDescent', 'eps': eps, 
+                                                           'eps_step':0.1, 'max_iter': 50})
+
+            if shift_sequence: 
+                # get the perturbation 
+                delta_fgsm, delta_pgd = Xfgsm - Xte, Xpgd - Xte
+                # apply the shift 
+                delta_fgsm[:, :, :shift_amount, 1] = 0
+                delta_pgd[:, :, :shift_amount, 1] = 0
+                Xfgsm = Xte + delta_fgsm
+                Xpgd = Xte + delta_pgd
+
+            for snr in np.unique(snrs_te): 
+                Yhat_fgsm = model.predict(Xfgsm[snrs_te == snr])
+                Yhat_pgd = model.predict(Xpgd[snrs_te == snr])
+
+                result_pgd_logger.add_scores(Yte[snrs_te==snr], Yhat_pgd, snr, eps_index)
+                result_fgsm_logger.add_scores(Yte[snrs_te==snr], Yhat_fgsm, snr, eps_index)
+
+        
 
         # save the results to a pickle file 
-        results = {'result_logger': result_logger}
+        results = {
+            'result_fgsm_logger': result_fgsm_logger, 
+            'result_pgd_logger': result_pgd_logger, 
+            'result_deepfool_logger': result_deepfool_logger 
+        }
         pickle.dump(results, open(output_path, 'wb'))
 
         
-    result_logger.finalize()
+    result_pgd_logger.finalize()
+    result_fgsm_logger.finalize()
+    result_deepfool_logger.finalize()
 
     # save the results to a pickle file 
-    results = {'result_logger': result_logger}
+    results = {
+            'result_fgsm_logger': result_fgsm_logger, 
+            'result_pgd_logger': result_pgd_logger, 
+            'result_deepfool_logger': result_deepfool_logger 
+    }
     pickle.dump(results, open(output_path, 'wb'))
