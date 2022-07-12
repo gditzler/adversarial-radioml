@@ -123,45 +123,15 @@ def experiment_adversarial(file_path:str,
                                   'file_path': 'models/convmodrecnets_adversary_CNN2_0.5.wts.h5'}
     
     # initialize the performances to empty 
-    result_fgsm_logger = FGSMPerfLogger(
-                            name='FGSM', 
-                            snrs=np.unique(snrs), 
-                            mods=np.unique(mods), 
-                            params=[train_params, train_adversary_params], 
-                            epsilons=epsilons
-                        )
-    result_pgd_logger = FGSMPerfLogger(
-                            name='PGD', 
-                            snrs=np.unique(snrs), 
-                            mods=np.unique(mods), 
-                            params=[train_params, train_adversary_params], 
-                            epsilons=epsilons
-                        )
-    result_deepfool_logger = AdversarialPerfLogger(
-                                name='DeepFool', 
-                                snrs=np.unique(snrs), 
-                                mods=np.unique(mods), 
-                                params=[train_params, train_adversary_params]
-                            )
+    # logger_with_epsilon = {'type', np.unique(snrs), np.unique(mods), [train_params, train_adversary_params], epsilons}
+    # logger_deepfool = {'type', np.unique(snrs), np.unique(mods), [train_params, train_adversary_params]}
 
-    result_fgsm_defense_logger = AdversarialDefenseLogger(
-                                    name='FGSM-Defense', 
-                                    snrs=np.unique(snrs), 
-                                    mods=np.unique(mods), 
-                                    params=[train_params, train_adversary_params]
-                                )
-    result_pgd_defense_logger = AdversarialDefenseLogger(
-                                    name='PGD-Defense', 
-                                    snrs=np.unique(snrs), 
-                                    mods=np.unique(mods), 
-                                    params=[train_params, train_adversary_params]
-                                )
-    result_deepfool_defense_logger = AdversarialDefenseLogger(
-                                        name='DeepFool-Defense', 
-                                        snrs=np.unique(snrs), 
-                                        mods=np.unique(mods), 
-                                        params=[train_params, train_adversary_params]
-                                    )
+    result_fgsm_logger = FGSMPerfLogger('type', np.unique(snrs), np.unique(mods), [train_params, train_adversary_params], epsilons)
+    result_pgd_logger = FGSMPerfLogger('type', np.unique(snrs), np.unique(mods), [train_params, train_adversary_params], epsilons)
+    result_deepfool_logger = AdversarialPerfLogger('type', np.unique(snrs), np.unique(mods), [train_params, train_adversary_params])
+    result_fgsm_defense_logger = AdversarialDefenseLogger('type', np.unique(snrs), np.unique(mods), [train_params, train_adversary_params], epsilons)
+    result_pgd_defense_logger = AdversarialDefenseLogger('type', np.unique(snrs), np.unique(mods), [train_params, train_adversary_params], epsilons)
+    result_deepfool_defense_logger = AdversarialDefenseLogger('type', np.unique(snrs), np.unique(mods), [train_params, train_adversary_params], [0])
 
     
     kf = KFold(n_splits=n_runs)
@@ -170,6 +140,8 @@ def experiment_adversarial(file_path:str,
         # split out the training and testing data. do the sample for the modulations and snrs
         Xtr, Ytr, Xte, Yte, snrs_te = X[train_index], Y[train_index], X[test_index], Y[test_index], snrs[test_index]
         
+        if verbose: 
+            print('Training the defenders model')
         model = nn_model(X=Xtr, Y=Ytr, train_param=train_params, adversarial_training=adversarial_training) 
 
         if scenario == 'GB': 
@@ -187,6 +159,8 @@ def experiment_adversarial(file_path:str,
         postprocessor_rc = ReverseSigmoid(beta=1.0, gamma=0.1)
         
         # evaluate Deepfool 
+        if verbose: 
+            print('Running DeepFool')
         Xdeep = generate_aml_data(model_aml, Xte, Yte, {'type': 'DeepFool'})
         if shift_sequence: 
             # get the perturbation 
@@ -207,17 +181,20 @@ def experiment_adversarial(file_path:str,
                 postprocessor_gn(Yhat_deep), 
                 postprocessor_cl(Yhat_deep), 
                 postprocessor_hc(Yhat_deep), 
-                postprocessor_rc(Yhat_deep)
+                postprocessor_rc(Yhat_deep), 
+                0
             )
             result_deepfool_logger.add_scores(Yte[snrs_te==snr], Yhat, Yhat, Yhat_deep, Yhat, snr)
-
+        
         
         # do fgsm and pgd 
         # loop through the different values of epsilon and generate adversarial datasets
         for eps_index, eps in enumerate(epsilons): 
+            if verbose: 
+                print(''.join(['Running PGD and FGSM with epsilon=', str(eps)]))
             Xfgsm = generate_aml_data(model_aml, Xte, Yte, {'type': 'FastGradientMethod', 'eps': eps})
             Xpgd = generate_aml_data(model_aml, Xte, Yte, {'type': 'ProjectedGradientDescent', 'eps': eps, 
-                                                           'eps_step':0.1, 'max_iter': 50})
+                                                           'eps_step':0.0005, 'max_iter': 50})
 
             if shift_sequence: 
                 # get the perturbation 
@@ -237,14 +214,16 @@ def experiment_adversarial(file_path:str,
                     postprocessor_gn(Yhat_fgsm), 
                     postprocessor_cl(Yhat_fgsm), 
                     postprocessor_hc(Yhat_fgsm), 
-                    postprocessor_rc(Yhat_fgsm)
+                    postprocessor_rc(Yhat_fgsm), 
+                    eps_index
                 )
                 result_pgd_defense_logger.add_scores(
                     Yte[snrs_te==snr], 
                     postprocessor_gn(Yhat_pgd), 
                     postprocessor_cl(Yhat_pgd), 
                     postprocessor_hc(Yhat_pgd), 
-                    postprocessor_rc(Yhat_pgd)
+                    postprocessor_rc(Yhat_pgd), 
+                    eps_index
                 )
 
                 result_pgd_logger.add_scores(Yte[snrs_te==snr], Yhat_pgd, snr, eps_index)
