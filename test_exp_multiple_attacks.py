@@ -37,7 +37,6 @@ train_params = {'type': 'vtcnn2',
                 'nb_epoch': 50, 
                 'verbose': verbose, 
                 'NHWC': [220000, 2, 128, 1],
-                'tpu': False, 
                 'file_path': 'models/convmodrecnets_CNN2_0.5.wts.h5'}
 # adversary's model 
 train_adversary_params = {'type': 'vtcnn2', 
@@ -47,7 +46,6 @@ train_adversary_params = {'type': 'vtcnn2',
                           'nb_epoch': 50, 
                           'verbose': verbose, 
                           'NHWC': [220000, 2, 128, 1],
-                          'tpu': False, 
                           'file_path': 'models/convmodrecnets_adversary_CNN2_0.5.wts.h5'}
 # run a sequence shift exp?
 shift_sequence = False 
@@ -55,18 +53,10 @@ shift_sequence = False
 shift_amount = 50 
 # attack strength
 epsilons = [0.00025, 0.0005, 0.001, 0.005, 0.01]
-# defense: 
-defense = None
 adversarial_training = False ### NOT IMPLMENTED  
 
 if shift_sequence:
     # name for the logger
-    logger_name = ''.join([
-        'aml_radioml_vtcnn2_vtcnn2_scenario_', 
-        scenario, 
-        '_shift_', 
-        str(shift_amount) 
-    ])
     output_path = ''.join([
         'outputs/aml_vtcnn2_vtcnn2_scenario_', 
         scenario, 
@@ -76,10 +66,6 @@ if shift_sequence:
     ])
 else: 
     # name for the logger
-    logger_name = ''.join([
-        'aml_radioml_vtcnn2_vtcnn2_scenario_', 
-        scenario
-    ])
     output_path = ''.join([
         'outputs/aml_vtcnn2_vtcnn2_scenario_', 
         scenario, 
@@ -97,8 +83,6 @@ exp_multiple_attack(file_path=file_path,
                     shift_amount=shift_amount, 
                     train_adversary_params=train_adversary_params, 
                     adversarial_training=adversarial_training, 
-                    defense=defense,
                     epsilons=epsilons, 
-                    logger_name=logger_name,
                     output_path=output_path)
 

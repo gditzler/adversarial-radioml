@@ -26,7 +26,6 @@ import tensorflow as tf
 from tensorflow.keras import models 
 from tensorflow.keras.layers import Dense, Dropout, Flatten
 from tensorflow.keras.layers import ZeroPadding2D, Conv2D
-# from tensorflow.contrib.tpu.python.tpu import keras_support
 import neural_structured_learning as nsl
 
 tf.compat.v1.disable_eager_execution()

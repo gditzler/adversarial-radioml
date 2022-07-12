@@ -44,9 +44,7 @@ def experiment_adversarial(file_path:str,
                            shift_amount:int=50, 
                            train_adversary_params:dict={}, 
                            adversarial_training:bool=False, 
-                           defense:str=None, 
                            epsilons:list=[0.00025, 0.0005, 0.001, 0.005, 0.01], 
-                           logger_name:str='aml_radioml_vtcnn2_vtcnn2_scenario_A',
                            output_path:str='outputs/aml_vtcnn2_vtcnn2_scenario_A_radioml.pkl'): 
     """run mulltiple attacks (FGSM, DeepFool, PGD) on the radioml dataset. note that this is not going to run 
     on google colab because it takes too long to execute. must be run on another cloud service or workstation. 
@@ -77,7 +75,6 @@ def experiment_adversarial(file_path:str,
                         'nb_epoch': 50, 
                         'verbose': verbose, 
                         'NHWC': [N, H, W, C],
-                        'tpu': False, 
                         'file_path': 'convmodrecnets_CNN2_0.5.wts.h5'}
     train_adversary_params : dict
         Training parameters 
@@ -90,8 +87,6 @@ def experiment_adversarial(file_path:str,
                                   'NHWC': [N, H, W, C],
                                   'epsilon': 0.15, 
                                   'file_path': 'convmodrecnets_adversary_CNN2_0.5.wts.h5'}
-    logger_name : str
-        Name of the logger class [default: 'aml_radioml_vtcnn2_vtcnn2_scenario_A']
     output_path : str
         Output path [default: outputs/aml_vtcnn2_vtcnn2_scenario_A_radioml.pkl]
     """
@@ -109,7 +104,6 @@ def experiment_adversarial(file_path:str,
                         'nb_epoch': 50, 
                         'verbose': verbose, 
                         'NHWC': [N, H, W, C],
-                        'tpu': False, 
                         'file_path': 'models/convmodrecnets_CNN2_0.5.wts.h5'}
     
     if len(train_adversary_params) == 0:
@@ -123,9 +117,6 @@ def experiment_adversarial(file_path:str,
                                   'file_path': 'models/convmodrecnets_adversary_CNN2_0.5.wts.h5'}
     
     # initialize the performances to empty 
-    # logger_with_epsilon = {'type', np.unique(snrs), np.unique(mods), [train_params, train_adversary_params], epsilons}
-    # logger_deepfool = {'type', np.unique(snrs), np.unique(mods), [train_params, train_adversary_params]}
-
     result_fgsm_logger = FGSMPerfLogger('type', np.unique(snrs), np.unique(mods), [train_params, train_adversary_params], epsilons)
     result_pgd_logger = FGSMPerfLogger('type', np.unique(snrs), np.unique(mods), [train_params, train_adversary_params], epsilons)
     result_deepfool_logger = AdversarialPerfLogger('type', np.unique(snrs), np.unique(mods), [train_params, train_adversary_params])
