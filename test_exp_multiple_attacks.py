@@ -53,28 +53,62 @@ train_adversary_params = {'type': 'vtcnn2',
 shift_sequence = False 
 # run a sequence shift exp?
 shift_amount = 50 
-
+# attack strength
+epsilons = [0.00025, 0.0005, 0.001, 0.005, 0.01]
+# defense: 
+defense = None
+adversarial_training = False ### NOT IMPLMENTED  
 
 if shift_sequence:
-    # name for the logger     
-    logger_name = 'aml_radioml_vtcnn2_vtcnn2_scenario_' + scenario + '_shift_'+str(shift_amount)
-    # output path
-    output_path = 'outputs/aml_vtcnn2_vtcnn2_scenario_'+scenario+'_radioml_multiple_attack' + '_shift_'+str(shift_amount) + '.pkl'
+    # name for the logger
+    logger_name = ''.join([
+        'aml_radioml_vtcnn2_vtcnn2_scenario_', 
+        scenario, 
+        '_shift_', 
+        str(shift_amount), 
+        '_defense_', 
+        defense
+    ])
+    output_path = ''.join([
+        'outputs/aml_vtcnn2_vtcnn2_scenario_', 
+        scenario, 
+        '_radioml_multiple_attack_shift_', 
+        str(shift_amount), 
+        '_defense_', 
+        defense, 
+        '.pkl'
+    ])
 else: 
-    # name for the logger     
-    logger_name = 'aml_radioml_vtcnn2_vtcnn2_scenario_' + scenario  
-    # output path
-    output_path = 'outputs/aml_vtcnn2_vtcnn2_scenario_'+scenario+'_radioml_multiple_attack.pkl'
+    # name for the logger
+    logger_name = ''.join([
+        'aml_radioml_vtcnn2_vtcnn2_scenario_', 
+        scenario, 
+        '_defense_', 
+        defense
+    ])
+    output_path = ''.join([
+        'outputs/aml_vtcnn2_vtcnn2_scenario_', 
+        scenario, 
+        '_radioml_multiple_attack', 
+        '_defense_', 
+        defense, 
+        '.pkl'
+    ])
 
 
 
-exp_multiple_attack(file_path=file_path,
-                    n_runs=n_runs, 
-                    verbose=verbose, 
-                    scenario=scenario,
-                    train_params=train_params, 
-                    train_adversary_params=train_adversary_params, 
-                    logger_name=logger_name,
-                    output_path=output_path)
-
+experiment_adversarial(file_path=file_path,
+                       n_runs=n_runs, 
+                       verbose=verbose, 
+                       epsilon=epsilon, 
+                       scenario=scenario, 
+                       train_params=train_params, 
+                       shift_sequence=shift_sequence, 
+                       shift_amount=shift_amount, 
+                       train_adversary_params=train_adversary_params, 
+                       adversarial_training=adversarial_training, 
+                       defense=defense,
+                       epsilons=epsilons, 
+                       logger_name:str=logger_name,
+                       output_path=output_path)
 
