@@ -47,16 +47,12 @@ def generate_aml_data(model, X:np.ndarray, Y:np.ndarray, attack_params:dict):
     classifier = KerasClassifier(model=model, clip_values=(-5.0, 5.0), use_logits=False)
 
     if attack_params['type'] == 'FastGradientMethod': 
-        attack = FastGradientMethod(estimator=classifier, 
-                                    eps=attack_params['eps'])
+        attack = FastGradientMethod(estimator=classifier, eps=attack_params['eps'])
     elif attack_params['type'] == 'DeepFool': 
         attack = DeepFool(classifier, verbose=False)
     elif attack_params['type'] == 'ProjectedGradientDescent': 
-        attack = ProjectedGradientDescent(classifier, 
-                                          eps=attack_params['eps'], 
-                                          eps_step=attack_params['eps_step'], 
-                                          max_iter=attack_params['max_iter'],
-                                          verbose=False)
+        attack = ProjectedGradientDescent(classifier, eps=attack_params['eps'], eps_step=attack_params['eps_step'], 
+                                          max_iter=attack_params['max_iter'], verbose=False)
     else: 
         raise(ValueError(''.join(['Unknown attack ', attack_params['type']])))
 
