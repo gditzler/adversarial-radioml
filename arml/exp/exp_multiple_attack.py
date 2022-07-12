@@ -31,10 +31,7 @@ from ..adversarial_data import generate_aml_data
 
 from sklearn.model_selection import KFold
 
-from art.defences.postprocessor import GaussianNoise
-from art.defences.postprocessor import ClassLabels
-from art.defences.postprocessor import HighConfidence
-from art.defences.postprocessor import ReverseSigmoid
+from art.defences.postprocessor import GaussianNoise, ClassLabels, HighConfidence, ReverseSigmoid
 
 import neural_structured_learning as nsl
 
@@ -49,6 +46,7 @@ def experiment_adversarial(file_path:str,
                            shift_amount:int=50, 
                            train_adversary_params:dict={}, 
                            adversarial_training:bool=False, 
+                           defense:str=None, 
                            epsilons = [0.00025, 0.0005, 0.001, 0.005, 0.01], 
                            logger_name:str='aml_radioml_vtcnn2_vtcnn2_scenario_A',
                            output_path:str='outputs/aml_vtcnn2_vtcnn2_scenario_A_radioml.pkl'): 
@@ -159,6 +157,15 @@ def experiment_adversarial(file_path:str,
         elif scenario == 'WB': # completely whitebox 
             model_aml = copy(model)
         
+        if defense == 'GaussianNoise': 
+            postprocessor = GaussianNoise(scale=0.1)
+        elif defense == 'ClassLabels': 
+            postprocessor = ClassLabels()
+        elif defense == 'HighConfidence': 
+            postprocessor = HighConfidence(cutoff=0.1)
+        elif defense == 'ReverseSigmoid': 
+            postprocessor = ReverseSigmoid(beta=1.0, gamma=0.1)
+        
         # evaluate Deepfool 
         Xdeep = generate_aml_data(model_aml, Xte, Yte, {'type': 'DeepFool'})
         if shift_sequence: 
@@ -174,6 +181,9 @@ def experiment_adversarial(file_path:str,
         for snr in np.unique(snrs_te): 
             Yhat = model.predict(Xte[snrs_te == snr]) 
             Yhat_deep = model.predict(Xdeep[snrs_te == snr])
+            if defense is not None: 
+                Yhat_deep = postprocessor(Yhat_deep)
+
             result_deepfool_logger.add_scores(Yte[snrs_te==snr], Yhat, Yhat, Yhat_deep, Yhat, snr)
 
         
@@ -196,6 +206,9 @@ def experiment_adversarial(file_path:str,
             for snr in np.unique(snrs_te): 
                 Yhat_fgsm = model.predict(Xfgsm[snrs_te == snr])
                 Yhat_pgd = model.predict(Xpgd[snrs_te == snr])
+                if defense is not None: 
+                    Yhat_fgsm = postprocessor(Yhat_fgsm)
+                    Yhat_pgd = postprocessor(Yhat_pgd)
 
                 result_pgd_logger.add_scores(Yte[snrs_te==snr], Yhat_pgd, snr, eps_index)
                 result_fgsm_logger.add_scores(Yte[snrs_te==snr], Yhat_fgsm, snr, eps_index)
