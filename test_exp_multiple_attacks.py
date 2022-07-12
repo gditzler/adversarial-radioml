@@ -88,18 +88,18 @@ else:
 
 
 
-experiment_adversarial(file_path=file_path,
-                       n_runs=n_runs, 
-                       verbose=verbose, 
-                       epsilon=epsilon, 
-                       scenario=scenario, 
-                       train_params=train_params, 
-                       shift_sequence=shift_sequence, 
-                       shift_amount=shift_amount, 
-                       train_adversary_params=train_adversary_params, 
-                       adversarial_training=adversarial_training, 
-                       defense=defense,
-                       epsilons=epsilons, 
-                       logger_name=logger_name,
-                       output_path=output_path)
+exp_multiple_attack(file_path=file_path,
+                    n_runs=n_runs, 
+                    verbose=verbose, 
+                    epsilon=epsilon, 
+                    scenario=scenario, 
+                    train_params=train_params, 
+                    shift_sequence=shift_sequence, 
+                    shift_amount=shift_amount, 
+                    train_adversary_params=train_adversary_params, 
+                    adversarial_training=adversarial_training, 
+                    defense=defense,
+                    epsilons=epsilons, 
+                    logger_name=logger_name,
+                    output_path=output_path)
 
