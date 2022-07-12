@@ -65,34 +65,25 @@ if shift_sequence:
         'aml_radioml_vtcnn2_vtcnn2_scenario_', 
         scenario, 
         '_shift_', 
-        str(shift_amount), 
-        '_defense_', 
-        defense
+        str(shift_amount) 
     ])
     output_path = ''.join([
         'outputs/aml_vtcnn2_vtcnn2_scenario_', 
         scenario, 
         '_radioml_multiple_attack_shift_', 
         str(shift_amount), 
-        '_defense_', 
-        defense, 
         '.pkl'
     ])
 else: 
     # name for the logger
     logger_name = ''.join([
         'aml_radioml_vtcnn2_vtcnn2_scenario_', 
-        scenario, 
-        '_defense_', 
-        defense
+        scenario
     ])
     output_path = ''.join([
         'outputs/aml_vtcnn2_vtcnn2_scenario_', 
         scenario, 
-        '_radioml_multiple_attack', 
-        '_defense_', 
-        defense, 
-        '.pkl'
+        '_radioml_multiple_attack.pkl'
     ])
 
 
@@ -109,6 +100,6 @@ experiment_adversarial(file_path=file_path,
                        adversarial_training=adversarial_training, 
                        defense=defense,
                        epsilons=epsilons, 
-                       logger_name:str=logger_name,
+                       logger_name=logger_name,
                        output_path=output_path)
 
