@@ -114,7 +114,7 @@ def vtcnn2(X:np.ndarray, Y:np.ndarray, train_param:dict):
                                                           mode='auto')
 
     # compile and build the moedl 
-    model.compile(loss='categorical_crossentropy', optimizer='adam')
+    model.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['acc'])
     model.build(input_shape = (None,H,W,C))
 
     

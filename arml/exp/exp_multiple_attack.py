@@ -59,7 +59,7 @@ def experiment_adversarial(file_path:str,
         Number of cross validations  
     verbose : int
         Verbose?  
-    epsilon : float
+    epsilons : list
         attack strength
     shift_sequence : bool
         do you want to shift the location of the perturbation 
@@ -123,33 +123,45 @@ def experiment_adversarial(file_path:str,
                                   'file_path': 'models/convmodrecnets_adversary_CNN2_0.5.wts.h5'}
     
     # initialize the performances to empty 
-    result_fgsm_logger = FGSMPerfLogger(name='FGSM', 
-                                   snrs=np.unique(snrs), 
-                                   mods=np.unique(mods), 
-                                   params=[train_params, train_adversary_params], 
-                                   epsilons=epsilons)
-    result_pgd_logger = FGSMPerfLogger(name='PGD', 
-                                   snrs=np.unique(snrs), 
-                                   mods=np.unique(mods), 
-                                   params=[train_params, train_adversary_params], 
-                                   epsilons=epsilons)
-    result_deepfool_logger = AdversarialPerfLogger(name='DeepFool', 
-                                          snrs=np.unique(snrs), 
-                                          mods=np.unique(mods), 
-                                          params=[train_params, train_adversary_params])
+    result_fgsm_logger = FGSMPerfLogger(
+                            name='FGSM', 
+                            snrs=np.unique(snrs), 
+                            mods=np.unique(mods), 
+                            params=[train_params, train_adversary_params], 
+                            epsilons=epsilons
+                        )
+    result_pgd_logger = FGSMPerfLogger(
+                            name='PGD', 
+                            snrs=np.unique(snrs), 
+                            mods=np.unique(mods), 
+                            params=[train_params, train_adversary_params], 
+                            epsilons=epsilons
+                        )
+    result_deepfool_logger = AdversarialPerfLogger(
+                                name='DeepFool', 
+                                snrs=np.unique(snrs), 
+                                mods=np.unique(mods), 
+                                params=[train_params, train_adversary_params]
+                            )
 
-    result_fgsm_defense_logger = AdversarialDefenseLogger(name='FGSM-Defense', 
-                                          snrs=np.unique(snrs), 
-                                          mods=np.unique(mods), 
-                                          params=[train_params, train_adversary_params])
-    result_pgd_defense_logger = AdversarialDefenseLogger(name='PGD-Defense', 
-                                          snrs=np.unique(snrs), 
-                                          mods=np.unique(mods), 
-                                          params=[train_params, train_adversary_params])
-    result_deepfool_defense_logger = AdversarialDefenseLogger(name='DeepFool-Defense', 
-                                          snrs=np.unique(snrs), 
-                                          mods=np.unique(mods), 
-                                          params=[train_params, train_adversary_params])
+    result_fgsm_defense_logger = AdversarialDefenseLogger(
+                                    name='FGSM-Defense', 
+                                    snrs=np.unique(snrs), 
+                                    mods=np.unique(mods), 
+                                    params=[train_params, train_adversary_params]
+                                )
+    result_pgd_defense_logger = AdversarialDefenseLogger(
+                                    name='PGD-Defense', 
+                                    snrs=np.unique(snrs), 
+                                    mods=np.unique(mods), 
+                                    params=[train_params, train_adversary_params]
+                                )
+    result_deepfool_defense_logger = AdversarialDefenseLogger(
+                                        name='DeepFool-Defense', 
+                                        snrs=np.unique(snrs), 
+                                        mods=np.unique(mods), 
+                                        params=[train_params, train_adversary_params]
+                                    )
 
     
     kf = KFold(n_splits=n_runs)
