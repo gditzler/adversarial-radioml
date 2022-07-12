@@ -27,10 +27,11 @@ from tensorflow.keras import models
 from tensorflow.keras.layers import Dense, Dropout, Flatten
 from tensorflow.keras.layers import ZeroPadding2D, Conv2D
 # from tensorflow.contrib.tpu.python.tpu import keras_support
+import neural_structured_learning as nsl
 
 tf.compat.v1.disable_eager_execution()
 
-def nn_model(X:np.ndarray, Y:np.ndarray, train_param:dict): 
+def nn_model(X:np.ndarray, Y:np.ndarray, train_param:dict, adversarial_training:bool=False, multiplier:float=0.001): 
     """generate a neural network 
 
     Parameters
@@ -42,12 +43,12 @@ def nn_model(X:np.ndarray, Y:np.ndarray, train_param:dict):
     train_param : dict
     """
     if train_param['type'] == 'vtcnn2': 
-        model = vtcnn2(X=X, Y=Y, train_param=train_param)
+        model = vtcnn2(X=X, Y=Y, train_param=train_param, adversarial_training=adversarial_training, multiplier=multiplier)
     else: 
         raise(NotImplementedError(''.join([train_param['type'], 'is not implemented.'])))
     return model
 
-def vtcnn2(X:np.ndarray, Y:np.ndarray, train_param:dict): 
+def vtcnn2(X:np.ndarray, Y:np.ndarray, train_param:dict, adversarial_training:bool=False, multiplier:float=0.001): 
     """implementation of the vtcnn2
     
     Parameters
@@ -114,6 +115,11 @@ def vtcnn2(X:np.ndarray, Y:np.ndarray, train_param:dict):
                                                           mode='auto')
 
     # compile and build the moedl 
+    # Wrap the model with adversarial regularization.
+    if adversarial_training: 
+        adv_config = nsl.configs.make_adv_reg_config(multiplier=multiplier)
+        model = nsl.keras.AdversarialRegularization(model, adv_config=adv_config)
+
     model.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['acc'])
     model.build(input_shape = (None,H,W,C))
 

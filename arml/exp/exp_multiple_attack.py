@@ -170,7 +170,7 @@ def experiment_adversarial(file_path:str,
         # split out the training and testing data. do the sample for the modulations and snrs
         Xtr, Ytr, Xte, Yte, snrs_te = X[train_index], Y[train_index], X[test_index], Y[test_index], snrs[test_index]
         
-        model = nn_model(X=Xtr, Y=Ytr, train_param=train_params) 
+        model = nn_model(X=Xtr, Y=Ytr, train_param=train_params, adversarial_training=adversarial_training) 
 
         if scenario == 'GB': 
             # sample adversarial training data 
