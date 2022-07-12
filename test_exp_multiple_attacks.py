@@ -91,7 +91,6 @@ else:
 exp_multiple_attack(file_path=file_path,
                     n_runs=n_runs, 
                     verbose=verbose, 
-                    epsilon=epsilon, 
                     scenario=scenario, 
                     train_params=train_params, 
                     shift_sequence=shift_sequence, 

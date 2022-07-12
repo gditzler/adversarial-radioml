@@ -25,7 +25,7 @@ import numpy as np
 from copy import copy 
 from ..utils import load_radioml
 from ..models import nn_model
-from ..performance import AdversarialPerfLogger, PerfLogger, FGSMPerfLogger
+from ..performance import AdversarialPerfLogger, PerfLogger, FGSMPerfLogger, AdversarialDefenseLogger
 from ..adversarial_data import generate_aml_data
 
 from sklearn.model_selection import KFold
@@ -38,7 +38,6 @@ import neural_structured_learning as nsl
 def experiment_adversarial(file_path:str,
                            n_runs:int=5, 
                            verbose:int=1, 
-                           epsilon:float=0.0001, 
                            scenario:str='A', 
                            train_params:dict={}, 
                            shift_sequence:bool=True, 
@@ -139,15 +138,15 @@ def experiment_adversarial(file_path:str,
                                           mods=np.unique(mods), 
                                           params=[train_params, train_adversary_params])
 
-    result_fgsm_defense_logger = AdversarialPerfLogger(name='FGSM-Defense', 
+    result_fgsm_defense_logger = AdversarialDefenseLogger(name='FGSM-Defense', 
                                           snrs=np.unique(snrs), 
                                           mods=np.unique(mods), 
                                           params=[train_params, train_adversary_params])
-    result_pgd_defense_logger = AdversarialPerfLogger(name='PGD-Defense', 
+    result_pgd_defense_logger = AdversarialDefenseLogger(name='PGD-Defense', 
                                           snrs=np.unique(snrs), 
                                           mods=np.unique(mods), 
                                           params=[train_params, train_adversary_params])
-    result_deepfool_defense_logger = AdversarialPerfLogger(name='DeepFool-Defense', 
+    result_deepfool_defense_logger = AdversarialDefenseLogger(name='DeepFool-Defense', 
                                           snrs=np.unique(snrs), 
                                           mods=np.unique(mods), 
                                           params=[train_params, train_adversary_params])
