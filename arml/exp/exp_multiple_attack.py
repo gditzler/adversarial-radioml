@@ -139,7 +139,7 @@ def experiment_adversarial(file_path:str,
     for train_index, test_index in kf.split(X): 
         # split out the training and testing data. do the sample for the modulations and snrs
         Xtr, Ytr, Xte, Yte, snrs_te = X[train_index], Y[train_index], X[test_index], Y[test_index], snrs[test_index]
-        Xte, Yte, snrs_te = Xte[:1000], Yte[:1000], snrs_te[:1000]
+
         if verbose: 
             print('Training the defenders model')
         model = nn_model(X=Xtr, Y=Ytr, train_param=train_params, adversarial_training=adversarial_training) 
