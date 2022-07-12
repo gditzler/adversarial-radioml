@@ -47,7 +47,7 @@ def experiment_adversarial(file_path:str,
                            train_adversary_params:dict={}, 
                            adversarial_training:bool=False, 
                            defense:str=None, 
-                           epsilons = [0.00025, 0.0005, 0.001, 0.005, 0.01], 
+                           epsilons:list=[0.00025, 0.0005, 0.001, 0.005, 0.01], 
                            logger_name:str='aml_radioml_vtcnn2_vtcnn2_scenario_A',
                            output_path:str='outputs/aml_vtcnn2_vtcnn2_scenario_A_radioml.pkl'): 
     """run mulltiple attacks (FGSM, DeepFool, PGD) on the radioml dataset. note that this is not going to run 
@@ -139,6 +139,20 @@ def experiment_adversarial(file_path:str,
                                           snrs=np.unique(snrs), 
                                           mods=np.unique(mods), 
                                           params=[train_params, train_adversary_params])
+
+    result_fgsm_defense_logger = AdversarialPerfLogger(name='FGSM-Defense', 
+                                          snrs=np.unique(snrs), 
+                                          mods=np.unique(mods), 
+                                          params=[train_params, train_adversary_params])
+    result_pgd_defense_logger = AdversarialPerfLogger(name='PGD-Defense', 
+                                          snrs=np.unique(snrs), 
+                                          mods=np.unique(mods), 
+                                          params=[train_params, train_adversary_params])
+    result_deepfool_defense_logger = AdversarialPerfLogger(name='DeepFool-Defense', 
+                                          snrs=np.unique(snrs), 
+                                          mods=np.unique(mods), 
+                                          params=[train_params, train_adversary_params])
+
     
     kf = KFold(n_splits=n_runs)
     
@@ -157,14 +171,10 @@ def experiment_adversarial(file_path:str,
         elif scenario == 'WB': # completely whitebox 
             model_aml = copy(model)
         
-        if defense == 'GaussianNoise': 
-            postprocessor = GaussianNoise(scale=0.1)
-        elif defense == 'ClassLabels': 
-            postprocessor = ClassLabels()
-        elif defense == 'HighConfidence': 
-            postprocessor = HighConfidence(cutoff=0.1)
-        elif defense == 'ReverseSigmoid': 
-            postprocessor = ReverseSigmoid(beta=1.0, gamma=0.1)
+        postprocessor_gn = GaussianNoise(scale=0.1)
+        postprocessor_cl = ClassLabels()
+        postprocessor_hc = HighConfidence(cutoff=0.1)
+        postprocessor_rc = ReverseSigmoid(beta=1.0, gamma=0.1)
         
         # evaluate Deepfool 
         Xdeep = generate_aml_data(model_aml, Xte, Yte, {'type': 'DeepFool'})
@@ -181,9 +191,14 @@ def experiment_adversarial(file_path:str,
         for snr in np.unique(snrs_te): 
             Yhat = model.predict(Xte[snrs_te == snr]) 
             Yhat_deep = model.predict(Xdeep[snrs_te == snr])
-            if defense is not None: 
-                Yhat_deep = postprocessor(Yhat_deep)
 
+            result_deepfool_defense_logger.add_scores(
+                Yte[snrs_te==snr], 
+                postprocessor_gn(Yhat_deep), 
+                postprocessor_cl(Yhat_deep), 
+                postprocessor_hc(Yhat_deep), 
+                postprocessor_rc(Yhat_deep)
+            )
             result_deepfool_logger.add_scores(Yte[snrs_te==snr], Yhat, Yhat, Yhat_deep, Yhat, snr)
 
         
@@ -206,9 +221,21 @@ def experiment_adversarial(file_path:str,
             for snr in np.unique(snrs_te): 
                 Yhat_fgsm = model.predict(Xfgsm[snrs_te == snr])
                 Yhat_pgd = model.predict(Xpgd[snrs_te == snr])
-                if defense is not None: 
-                    Yhat_fgsm = postprocessor(Yhat_fgsm)
-                    Yhat_pgd = postprocessor(Yhat_pgd)
+
+                result_fgsm_defense_logger.add_scores(
+                    Yte[snrs_te==snr], 
+                    postprocessor_gn(Yhat_fgsm), 
+                    postprocessor_cl(Yhat_fgsm), 
+                    postprocessor_hc(Yhat_fgsm), 
+                    postprocessor_rc(Yhat_fgsm)
+                )
+                result_pgd_defense_logger.add_scores(
+                    Yte[snrs_te==snr], 
+                    postprocessor_gn(Yhat_pgd), 
+                    postprocessor_cl(Yhat_pgd), 
+                    postprocessor_hc(Yhat_pgd), 
+                    postprocessor_rc(Yhat_pgd)
+                )
 
                 result_pgd_logger.add_scores(Yte[snrs_te==snr], Yhat_pgd, snr, eps_index)
                 result_fgsm_logger.add_scores(Yte[snrs_te==snr], Yhat_fgsm, snr, eps_index)
@@ -219,7 +246,10 @@ def experiment_adversarial(file_path:str,
         results = {
             'result_fgsm_logger': result_fgsm_logger, 
             'result_pgd_logger': result_pgd_logger, 
-            'result_deepfool_logger': result_deepfool_logger 
+            'result_deepfool_logger': result_deepfool_logger, 
+            'result_fgsm_defense_logger': result_fgsm_defense_logger, 
+            'result_pgd_defense_logger': result_pgd_defense_logger, 
+            'result_deepfool_defense_logger': result_deepfool_defense_logger  
         }
         pickle.dump(results, open(output_path, 'wb'))
 
@@ -227,11 +257,17 @@ def experiment_adversarial(file_path:str,
     result_pgd_logger.finalize()
     result_fgsm_logger.finalize()
     result_deepfool_logger.finalize()
+    result_fgsm_defense_logger.finalize()
+    result_pgd_defense_logger.finalize()
+    result_deepfool_defense_logger.finalize()
 
     # save the results to a pickle file 
     results = {
-            'result_fgsm_logger': result_fgsm_logger, 
-            'result_pgd_logger': result_pgd_logger, 
-            'result_deepfool_logger': result_deepfool_logger 
+        'result_fgsm_logger': result_fgsm_logger, 
+        'result_pgd_logger': result_pgd_logger, 
+        'result_deepfool_logger': result_deepfool_logger, 
+        'result_fgsm_defense_logger': result_fgsm_defense_logger, 
+        'result_pgd_defense_logger': result_pgd_defense_logger, 
+        'result_deepfool_defense_logger': result_deepfool_defense_logger  
     }
     pickle.dump(results, open(output_path, 'wb'))
