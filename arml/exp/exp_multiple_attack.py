@@ -139,7 +139,7 @@ def experiment_adversarial(file_path:str,
     for train_index, test_index in kf.split(X): 
         # split out the training and testing data. do the sample for the modulations and snrs
         Xtr, Ytr, Xte, Yte, snrs_te = X[train_index], Y[train_index], X[test_index], Y[test_index], snrs[test_index]
-        
+        Xte, Yte, snrs_te = Xte[:1000], Yte[:1000], snrs_te[:1000]
         if verbose: 
             print('Training the defenders model')
         model = nn_model(X=Xtr, Y=Ytr, train_param=train_params, adversarial_training=adversarial_training) 
@@ -166,7 +166,7 @@ def experiment_adversarial(file_path:str,
             # get the perturbation 
             delta_deep = Xdeep - Xte
             # apply the shift 
-            delta_deep[:, :, :shift_amount, 1] = 0
+            delta_deep[:, :, :shift_amount, 0] = 0
             Xdeep = Xte + delta_deep
         
         # for each of the snrs -> grab all of the data for that snr, which should have all of
@@ -182,6 +182,7 @@ def experiment_adversarial(file_path:str,
                 postprocessor_cl(Yhat_deep), 
                 postprocessor_hc(Yhat_deep), 
                 postprocessor_rc(Yhat_deep), 
+                snr, 
                 0
             )
             result_deepfool_logger.add_scores(Yte[snrs_te==snr], Yhat, Yhat, Yhat_deep, Yhat, snr)
@@ -200,8 +201,8 @@ def experiment_adversarial(file_path:str,
                 # get the perturbation 
                 delta_fgsm, delta_pgd = Xfgsm - Xte, Xpgd - Xte
                 # apply the shift 
-                delta_fgsm[:, :, :shift_amount, 1] = 0
-                delta_pgd[:, :, :shift_amount, 1] = 0
+                delta_fgsm[:, :, :shift_amount, 0] = 0
+                delta_pgd[:, :, :shift_amount, 0] = 0
                 Xfgsm = Xte + delta_fgsm
                 Xpgd = Xte + delta_pgd
 
@@ -215,6 +216,7 @@ def experiment_adversarial(file_path:str,
                     postprocessor_cl(Yhat_fgsm), 
                     postprocessor_hc(Yhat_fgsm), 
                     postprocessor_rc(Yhat_fgsm), 
+                    snr, 
                     eps_index
                 )
                 result_pgd_defense_logger.add_scores(
@@ -223,6 +225,7 @@ def experiment_adversarial(file_path:str,
                     postprocessor_cl(Yhat_pgd), 
                     postprocessor_hc(Yhat_pgd), 
                     postprocessor_rc(Yhat_pgd), 
+                    snr, 
                     eps_index
                 )
 
