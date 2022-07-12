@@ -282,7 +282,7 @@ class FGSMPerfLogger():
         of the number of runs 
     """
 
-    def __init__(self, name:str, snrs:np.ndarray, mods:np.ndarray, params:dict, epsilons=np.ndarray): 
+    def __init__(self, name:str, snrs:np.ndarray, mods:np.ndarray, params:dict, epsilons:np.ndarray): 
         """initialize the object 
 
         Parameters
@@ -378,7 +378,7 @@ class AdversarialDefenseLogger():
         of the number of runs 
     """
     
-    def __init__(self, name:str, snrs:np.ndarray, mods:np.ndarray, params:dict): 
+    def __init__(self, name:str, snrs:np.ndarray, mods:np.ndarray, params:dict, epsilons:list): 
         """initialize the object 
 
         Parameters
@@ -396,28 +396,30 @@ class AdversarialDefenseLogger():
         self.mods = mods
         self.n_classes = len(mods)
         self.n_snrs = len(snrs)
+        self.epsilons = epsilons 
+        self.n_epsilons = len(epsilons)
         
-        self.accuracy_gn = np.zeros((self.n_snrs,))
-        self.perplexity_gn = np.zeros((self.n_snrs,))
-        self.aucs_gn = np.zeros((self.n_snrs,))
+        self.accuracy_gn = np.zeros((self.n_snrs,self.n_epsilons))
+        self.perplexity_gn = np.zeros((self.n_snrs,self.n_epsilons))
+        self.aucs_gn = np.zeros((self.n_snrs,self.n_epsilons))
         
-        self.accuracy_cl = np.zeros((self.n_snrs,))
-        self.perplexity_cl = np.zeros((self.n_snrs,))
-        self.aucs_cl = np.zeros((self.n_snrs,))
+        self.accuracy_cl = np.zeros((self.n_snrs,self.n_epsilons))
+        self.perplexity_cl = np.zeros((self.n_snrs,self.n_epsilons))
+        self.aucs_cl = np.zeros((self.n_snrs,self.n_epsilons))
 
-        self.accuracy_hc = np.zeros((self.n_snrs,))
-        self.perplexity_hc = np.zeros((self.n_snrs,))
-        self.aucs_hc = np.zeros((self.n_snrs,))
+        self.accuracy_hc = np.zeros((self.n_snrs,self.n_epsilons))
+        self.perplexity_hc = np.zeros((self.n_snrs,self.n_epsilons))
+        self.aucs_hc = np.zeros((self.n_snrs,self.n_epsilons))
 
-        self.accuracy_rc = np.zeros((self.n_snrs,))
-        self.perplexity_rc = np.zeros((self.n_snrs,))
-        self.aucs_rc = np.zeros((self.n_snrs,))
+        self.accuracy_rc = np.zeros((self.n_snrs,self.n_epsilons))
+        self.perplexity_rc = np.zeros((self.n_snrs,self.n_epsilons))
+        self.aucs_rc = np.zeros((self.n_snrs,self.n_epsilons))
 
         self.name = name 
         self.params = params
         self.count = np.zeros((self.n_snrs,)) 
     
-    def add_scores(self, Y, Yhat_gn, Yhat_cl, Yhat_hc, Yhat_rc, snr): 
+    def add_scores(self, Y, Yhat_gn, Yhat_cl, Yhat_hc, Yhat_rc, snr, eps_index): 
         """add the current scores to the logger 
 
         Parameters
@@ -430,43 +432,43 @@ class AdversarialDefenseLogger():
             SNR level from the predictions 
         """
         auc, acc, ppl = prediction_stats(Y, Yhat_gn)
-        self.accuracy_gn[self.snrs == snr] += acc
-        self.perplexity_gn[self.snrs == snr] += ppl
-        self.aucs_gn[self.snrs == snr] += auc
+        self.accuracy_gn[self.snrs == snr, eps_index] += acc
+        self.perplexity_gn[self.snrs == snr, eps_index] += ppl
+        self.aucs_gn[self.snrs == snr, eps_index] += auc
 
         auc, acc, ppl = prediction_stats(Y, Yhat_cl)
-        self.accuracy_cl[self.snrs == snr] += acc
-        self.perplexity_cl[self.snrs == snr] += ppl
-        self.aucs_cl[self.snrs == snr] += auc
+        self.accuracy_cl[self.snrs == snr, eps_index] += acc
+        self.perplexity_cl[self.snrs == snr, eps_index] += ppl
+        self.aucs_cl[self.snrs == snr, eps_index] += auc
 
         auc, acc, ppl = prediction_stats(Y, Yhat_hc)
-        self.accuracy_hc[self.snrs == snr] += acc
-        self.perplexity_hc[self.snrs == snr] += ppl
-        self.aucs_hc[self.snrs == snr] += auc
+        self.accuracy_hc[self.snrs == snr, eps_index] += acc
+        self.perplexity_hc[self.snrs == snr, eps_index] += ppl
+        self.aucs_hc[self.snrs == snr, eps_index] += auc
 
         auc, acc, ppl = prediction_stats(Y, Yhat_rc)
-        self.accuracy_rc[self.snrs == snr] += acc
-        self.perplexity_rc[self.snrs == snr] += ppl
-        self.aucs_rc[self.snrs == snr] += auc
+        self.accuracy_rc[self.snrs == snr, eps_index] += acc
+        self.perplexity_rc[self.snrs == snr, eps_index] += ppl
+        self.aucs_rc[self.snrs == snr, eps_index] += auc
 
         self.count[self.snrs == snr] += 1
 
     def finalize(self): 
         """scale the scores based on the number of runs performed
         """
-        for i in range(self.n_snrs): 
-            self.accuracy_gn[i] /= self.count[i]
-            self.perplexity_gn[i] /= self.count[i] 
-            self.aucs_gn[i] /= self.count[i]
+        i = 0
+        self.accuracy_gn /= self.count[i]
+        self.perplexity_gn /= self.count[i] 
+        self.aucs_gn /= self.count[i]
 
-            self.accuracy_cl[i] /= self.count[i]
-            self.perplexity_cl[i] /= self.count[i] 
-            self.aucs_cl[i] /= self.count[i]
+        self.accuracy_cl /= self.count[i]
+        self.perplexity_cl /= self.count[i] 
+        self.aucs_cl /= self.count[i]
 
-            self.accuracy_hc[i] /= self.count[i]
-            self.perplexity_hc[i] /= self.count[i] 
-            self.aucs_hc[i] /= self.count[i]
+        self.accuracy_hc /= self.count[i]
+        self.perplexity_hc /= self.count[i] 
+        self.aucs_hc /= self.count[i]
 
-            self.accuracy_rc[i] /= self.count[i]
-            self.perplexity_rc[i] /= self.count[i] 
-            self.aucs_rc[i] /= self.count[i]
+        self.accuracy_rc /= self.count[i]
+        self.perplexity_rc /= self.count[i] 
+        self.aucs_rc /= self.count[i]
